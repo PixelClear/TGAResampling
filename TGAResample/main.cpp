@@ -1,62 +1,43 @@
+
 #include "TGA.h"
 
-bool LoadTGA(string& fileName)
+bool Tga::loadTGA(const char* FilePath)
 {
-	ifstream in{ fileName,std::ifstream::in | std::ifstream::binary };
-	if (!in.is_open())
+	std::fstream hFile(FilePath, std::ios::in | std::ios::binary);
+	if (!hFile.is_open())
 		return false;
 
-	//Read first 12 bytes header
-	in.read(reinterpret_cast<char*>(&tgaHeader), sizeof(tgaHeader));
-	if (in.gcount() <= 0)
-		return false;
+	hFile.read(reinterpret_cast<char*>(&header_), sizeof(header_));
 
-	//Assuming only compressed TGA
-	if (std::memcmp(uTgaHeader, &tgaHeader, sizeof(tgaHeader)) == 0)
+	if (std::memcmp(compressed_, &header_, sizeof(compressed_)))
 	{
-		//Read next 6 bytes of header
-		in.read(reinterpret_cast<char*>(&tga.header), sizeof(tga.header));
-		if (in.gcount() <= 0)
-			return false;
+		bitsPerPixel_ = header_[16];
+		width_ = header_[13] * 256 + header_[12];
+		height_ = header_[15] * 256 + header_[14];
+		size_ = ((width_ * bitsPerPixel_ + 31) / 32) * 4 * height_ ;
 
-		//Fill tga structure
-		tga.width = tga.header[1] * 256 + tga.header[0];
-		tga.height = tga.header[3] * 256 + tga.header[2];
-		tga.bpp = tga.header[4];
-
-		if (tga.width <= 0 || tga.height <= 0 || (tga.bpp != 24 && tga.bpp != 32))
-			return false;
-
-		(tga.bpp == 24) ? tga.type = RGB : tga.type = RGBA;
-		tga.bytesPerPixel = tga.bpp / 8;
-		tga.imageSize = tga.bytesPerPixel * tga.height * tga.width;
-
-		//Read Image Data
-		tga.imageData = new byte[tga.imageSize];
-		if (!tga.imageData)
-			return false;
-
-		in.read(reinterpret_cast<char*>(&tga.imageData), tga.imageSize);
-		if (in.gcount() <= 0)
-			return false;
-
-		//TGA reads data in reverse order
-		for (uint i = 0; i < tga.imageSize; i++)
+		if (width_ <= 0 || height_ <=0 || (bitsPerPixel_ != 24) && (bitsPerPixel_ != 32))
 		{
-			//Xor 1st and 3rd byte twice to swap it
-			tga.imageData[i] ^= tga.imageData[i + 2] ^=
-			tga.imageData[i] ^= tga.imageData[i + 2];
+			hFile.close();
+			return false;
 		}
-	}
-	else if (std::memcmp(cTgaHeader, &tgaHeader, sizeof(tgaHeader)) == 0)
-	{
-		//Not Yet Implemented
+
+		imageData_.resize(size_);
+		bCompressed_ = false;
+		hFile.read(reinterpret_cast<char*>(imageData_.data()), size_);
 	}
 	else
 	{
 		return false;
 	}
 
-	in.close();
+	hFile.close();
 	return true;
+}
+
+int main()
+{
+	Tga tga;
+	tga.loadTGA("xing_b32.tga");
+
 }
