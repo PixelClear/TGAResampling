@@ -1,3 +1,5 @@
 ﻿  main.cpp
-c:\users\parku\source\repos\tgaresample\tgaresample\main.cpp(47): warning C4715: 'Tga::saveTGA': not all control paths return a value
+c:\users\parku\source\repos\tgaresample\tgaresample\main.cpp(89): warning C4018: '>': signed/unsigned mismatch
+c:\users\parku\source\repos\tgaresample\tgaresample\main.cpp(90): warning C4018: '>': signed/unsigned mismatch
+c:\users\parku\source\repos\tgaresample\tgaresample\main.cpp(99): warning C4172: returning address of local variable or temporary: destTga
   TGAResample.vcxproj -> C:\Users\parku\source\repos\TGAResample\Debug\TGAResample.exe

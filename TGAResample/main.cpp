@@ -15,7 +15,8 @@ bool Tga::loadTGA(const char* FilePath)
 		width_ = header_[13] * 256 + header_[12];
 		height_ = header_[15] * 256 + header_[14];
 		size_ = ((width_ * bitsPerPixel_ + 31) / 32) * 4 * height_ ;
-
+		numOfChannels_ = bitsPerPixel_ / 8;
+		pitch_ = width_ * numOfChannels_;
 		if (width_ <= 0 || height_ <=0 || (bitsPerPixel_ != 24) && (bitsPerPixel_ != 32))
 		{
 			in.close();
@@ -40,15 +41,69 @@ bool Tga::saveTGA(const char* fileName)
 	std::fstream out{fileName, std::fstream::out | std::fstream::binary};
 	if (!out.is_open())
 		return false;
-
-	out.write(reinterpret_cast<char*>(header_), sizeof(header_));
+	
+	out.put(0);
+	out.put(0);
+	out.put(2);
+	out.put(0);
+	out.put(0);
+	out.put(0);
+	out.put(0);
+	out.put(0);
+	out.put(0);
+	out.put(0);
+	out.put(0);
+	out.put(0);
+	out.put(width_ & 0x00FF);
+	out.put((width_ & 0xFF00)/256);
+	out.put(height_ & 0x00FF);
+	out.put((height_ & 0xFF00) / 256);
+	out.put(bitsPerPixel_);
+	out.put(0);
 	out.write(reinterpret_cast<char*>(imageData_.data()), size_);
 	out.close();
+	return true;
+}
+
+Tga& Tga::resizeTGA()
+{
+	Tga destTga{};
+	destTga.width_ = static_cast<uint32_t>(width_ / 2);
+	destTga.height_ = static_cast<uint32_t>(height_ / 2);
+	destTga.bitsPerPixel_ = bitsPerPixel_;
+	destTga.numOfChannels_ = numOfChannels_;
+	destTga.size_ = ((destTga.width_ * destTga.bitsPerPixel_ + 31) / 32) * 4 * destTga.height_;
+	destTga.pitch_ = destTga.width_ * destTga.numOfChannels_;
+	destTga.imageData_.resize(destTga.size_);
+
+	for (uint32_t j = 0; j < destTga.height_; j++)
+	{
+		float v = static_cast<float>(j) / static_cast<float>(destTga.height_ - 1);
+		for (uint32_t i = 0; i < destTga.width_; i++)
+		{
+			float u = static_cast<float>(i) / static_cast<float>(destTga.width_ - 1);
+
+			int x = int(u * width_);
+			int y = int(v * height_);
+
+			CLAMP(x, 0, width_ - 1);
+			CLAMP(y, 0, height_ - 1);
+
+			destTga.imageData_[(j * destTga.pitch_) + (i + 0) * numOfChannels_] = imageData_[(y * pitch_) + (x + 0) * numOfChannels_];
+			destTga.imageData_[(j * destTga.pitch_) + (i + 1) * numOfChannels_] = imageData_[(y * pitch_) + (x + 1) * numOfChannels_];
+			destTga.imageData_[(j * destTga.pitch_) + (i + 2) * numOfChannels_] = imageData_[(y * pitch_) + (x + 2) * numOfChannels_];
+		}
+	}
+
+	destTga.saveTGA("Resized.tga");
+	return destTga;
 }
 
 int main()
 {
 	Tga tga;
-	tga.loadTGA("flag_b24.tga");
+	tga.loadTGA("MARBLES.tga");
+	//tga.loadTGA("MARBLES.tga");
 	tga.saveTGA("test.tga");
+	tga.resizeTGA();
 }

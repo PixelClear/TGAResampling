@@ -3,6 +3,8 @@
 #include <vector>
 #include <string>
 
+#define CLAMP(v, min, max) if (v < min) { v = min; } else if (v > max) { v = max; } 
+
 class Tga
 {
 private:
@@ -12,7 +14,8 @@ private:
 	std::uint32_t height_;
 	std::uint32_t size_;
 	std::uint32_t bitsPerPixel_;
-
+	std::uint32_t numOfChannels_;
+	std::uint32_t pitch_;
 	std::uint8_t header_[18] = { 0 };
 	std::vector<std::uint8_t> imageData_;
 	const std::uint8_t compressed_[12] = { 0x0, 0x0, 0xA, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
@@ -23,6 +26,7 @@ public:
 
 	bool loadTGA(const char* FilePath);
 	bool saveTGA(const char* fileName);
+	Tga& resizeTGA();
 	std::vector<std::uint8_t> getPixels() const { return pixels_; }
 	std::uint32_t getWidth() const { return this->width_; }
 	std::uint32_t getHeight() const { return this->height_; }
