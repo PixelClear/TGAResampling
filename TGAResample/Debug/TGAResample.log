@@ -1,2 +1,3 @@
 ﻿  main.cpp
+c:\users\parku\source\repos\tgaresample\tgaresample\main.cpp(47): warning C4715: 'Tga::saveTGA': not all control paths return a value
   TGAResample.vcxproj -> C:\Users\parku\source\repos\TGAResample\Debug\TGAResample.exe

@@ -3,11 +3,11 @@
 
 bool Tga::loadTGA(const char* FilePath)
 {
-	std::fstream hFile(FilePath, std::ios::in | std::ios::binary);
-	if (!hFile.is_open())
+	std::fstream in{ FilePath, std::ios::in | std::ios::binary };
+	if (!in.is_open())
 		return false;
 
-	hFile.read(reinterpret_cast<char*>(&header_), sizeof(header_));
+	in.read(reinterpret_cast<char*>(&header_), sizeof(header_));
 
 	if (std::memcmp(compressed_, &header_, sizeof(compressed_)))
 	{
@@ -18,26 +18,37 @@ bool Tga::loadTGA(const char* FilePath)
 
 		if (width_ <= 0 || height_ <=0 || (bitsPerPixel_ != 24) && (bitsPerPixel_ != 32))
 		{
-			hFile.close();
+			in.close();
 			return false;
 		}
 
 		imageData_.resize(size_);
 		bCompressed_ = false;
-		hFile.read(reinterpret_cast<char*>(imageData_.data()), size_);
+		in.read(reinterpret_cast<char*>(imageData_.data()), size_);
 	}
 	else
 	{
 		return false;
 	}
 
-	hFile.close();
+	in.close();
 	return true;
+}
+
+bool Tga::saveTGA(const char* fileName)
+{
+	std::fstream out{fileName, std::fstream::out | std::fstream::binary};
+	if (!out.is_open())
+		return false;
+
+	out.write(reinterpret_cast<char*>(header_), sizeof(header_));
+	out.write(reinterpret_cast<char*>(imageData_.data()), size_);
+	out.close();
 }
 
 int main()
 {
 	Tga tga;
-	tga.loadTGA("xing_b32.tga");
-
+	tga.loadTGA("flag_b24.tga");
+	tga.saveTGA("test.tga");
 }

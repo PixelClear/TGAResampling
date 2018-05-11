@@ -22,6 +22,7 @@ public:
 	~Tga() {};
 
 	bool loadTGA(const char* FilePath);
+	bool saveTGA(const char* fileName);
 	std::vector<std::uint8_t> getPixels() const { return pixels_; }
 	std::uint32_t getWidth() const { return this->width_; }
 	std::uint32_t getHeight() const { return this->height_; }
