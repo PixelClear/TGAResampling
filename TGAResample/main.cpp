@@ -79,6 +79,7 @@ Tga& Tga::resizeTGA()
 	for (uint32_t j = 0; j < destTga.height_; j++)
 	{
 		float v = static_cast<float>(j) / static_cast<float>(destTga.height_ - 1);
+		int rows = 0;
 		for (uint32_t i = 0; i < destTga.width_; i++)
 		{
 			float u = static_cast<float>(i) / static_cast<float>(destTga.width_ - 1);
@@ -88,10 +89,13 @@ Tga& Tga::resizeTGA()
 
 			CLAMP(x, 0, width_ - 1);
 			CLAMP(y, 0, height_ - 1);
+			
+			uint8_t* pixel = &destTga.imageData_[(j * destTga.pitch_) + (i + 0) * numOfChannels_];
+			uint8_t* sample = &imageData_[(y * pitch_) + (x + 0) * numOfChannels_];
 
-			destTga.imageData_[(j * destTga.pitch_) + (i + 0) * numOfChannels_] = imageData_[(y * pitch_) + (x + 0) * numOfChannels_];
-			destTga.imageData_[(j * destTga.pitch_) + (i + 1) * numOfChannels_] = imageData_[(y * pitch_) + (x + 1) * numOfChannels_];
-			destTga.imageData_[(j * destTga.pitch_) + (i + 2) * numOfChannels_] = imageData_[(y * pitch_) + (x + 2) * numOfChannels_];
+			pixel[0] = sample[0];
+			pixel[1] = sample[1];
+			pixel[2] = sample[2];
 		}
 	}
 
@@ -102,8 +106,8 @@ Tga& Tga::resizeTGA()
 int main()
 {
 	Tga tga;
+	//tga.loadTGA("xing_b32.tga");
 	tga.loadTGA("MARBLES.tga");
-	//tga.loadTGA("MARBLES.tga");
 	tga.saveTGA("test.tga");
 	tga.resizeTGA();
 }

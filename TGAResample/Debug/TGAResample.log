@@ -1,5 +1,5 @@
 ﻿  main.cpp
-c:\users\parku\source\repos\tgaresample\tgaresample\main.cpp(89): warning C4018: '>': signed/unsigned mismatch
 c:\users\parku\source\repos\tgaresample\tgaresample\main.cpp(90): warning C4018: '>': signed/unsigned mismatch
-c:\users\parku\source\repos\tgaresample\tgaresample\main.cpp(99): warning C4172: returning address of local variable or temporary: destTga
+c:\users\parku\source\repos\tgaresample\tgaresample\main.cpp(91): warning C4018: '>': signed/unsigned mismatch
+c:\users\parku\source\repos\tgaresample\tgaresample\main.cpp(103): warning C4172: returning address of local variable or temporary: destTga
   TGAResample.vcxproj -> C:\Users\parku\source\repos\TGAResample\Debug\TGAResample.exe
