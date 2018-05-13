@@ -5,6 +5,10 @@
 #include <cassert>
 #include <memory>
 
+//#define NEAREST_ 1
+//#define LINEAR_ 1
+#define CUBIC_ 1
+
 class Tga
 {
 
@@ -62,6 +66,16 @@ public:
 	void resize(Tga& in, Tga& out) override;
 };
 
+class CubicSpline : public Resample
+{
+public:
+	CubicSpline() = default;
+	virtual ~CubicSpline() {}
+public:
+
+	void resize(Tga& in, Tga& out) override;
+};
+
 namespace Helper
 {
 	template<class T>
@@ -81,5 +95,15 @@ namespace Helper
 		clamp<int>(y, 0, in.height_ - 1);
 
 		return &in.imageData_[(y * in.pitch_) + (x + 0) * in.numOfChannels_];
+	}
+
+	float cubicHermite(float A, float B, float C, float D, float t)
+	{
+		float a = -A / 2.0f + (3.0f*B) / 2.0f - (3.0f*C) / 2.0f + D / 2.0f;
+		float b = A - (5.0f*B) / 2.0f + 2.0f*C - D / 2.0f;
+		float c = -A / 2.0f + C / 2.0f;
+		float d = B;
+
+		return a * t*t*t + b * t*t + c * t + d;
 	}
 };

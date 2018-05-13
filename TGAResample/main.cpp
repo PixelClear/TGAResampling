@@ -5,18 +5,18 @@ void NearestNeighbour::resize(Tga& in, Tga& out)
 {
 	for (uint32_t j = 0; j < out.height_; j++)
 	{
-		float v = static_cast<float>(j) / static_cast<float>(out.height_ - 1);
+		const float v = static_cast<float>(j) / static_cast<float>(out.height_ - 1);
 		for (uint32_t i = 0; i < out.width_; i++)
 		{
-			float u = static_cast<float>(i) / static_cast<float>(out.width_ - 1);
+			const float u = static_cast<float>(i) / static_cast<float>(out.width_ - 1);
 
-			int x = int(u * in.width_);
-			int y = int(v * in.height_);
+			const int x = int(u * in.width_);
+			const int y = int(v * in.height_);
 			
 			assert(in.numOfChannels_ == out.numOfChannels_);
 
 		    auto pixel = &out.imageData_[(j * out.pitch_) + (i + 0) * in.numOfChannels_];
-			auto sample = Helper::getClampedSample(in, x, y);
+			const auto sample = Helper::getClampedSample(in, x, y);
 
 			pixel[0] = sample[0];
 			pixel[1] = sample[1];
@@ -29,34 +29,97 @@ void Bilinear::resize(Tga& in, Tga& out)
 {
 	for (uint32_t j = 0; j < out.height_; j++)
 	{
-		float v = static_cast<float>(j) / static_cast<float>(out.height_ - 1);
+		const float v = static_cast<float>(j) / static_cast<float>(out.height_ - 1);
 		for (uint32_t i = 0; i < out.width_; i++)
 		{
-			float u = static_cast<float>(i) / static_cast<float>(out.width_ - 1);
+			const float u = static_cast<float>(i) / static_cast<float>(out.width_ - 1);
 
-			float x = (u * in.width_) - 0.5f;
-			int xint = int(x);
-			float tx = x - floor(x);
+			const float x = (u * in.width_) - 0.5f;
+			const int xint = int(x);
+			const float tx = x - floor(x);
 
-			float y = (v * in.height_) - 0.5f;
-			int yint = int(y);
-			float ty = y - floor(y);
+			const float y = (v * in.height_) - 0.5f;
+			const int yint = int(y);
+			const float ty = y - floor(y);
 
-			auto sample00 = Helper::getClampedSample(in, xint, yint);
-			auto sample10 = Helper::getClampedSample(in, xint + 1, yint);
-			auto sample01 = Helper::getClampedSample(in, xint, yint + 1);
-			auto sample11 = Helper::getClampedSample(in, xint + 1, yint + 1);
+			const auto sample00 = Helper::getClampedSample(in, xint, yint);
+			const auto sample10 = Helper::getClampedSample(in, xint + 1, yint);
+			const auto sample01 = Helper::getClampedSample(in, xint, yint + 1);
+			const auto sample11 = Helper::getClampedSample(in, xint + 1, yint + 1);
 
 			uint8_t finaleSample[3];
 			for (uint32_t i = 0 ; i < 3; i++)
 			{
 				//Interpolation in X direction
-				float col0 = Helper::lerp(sample00[i], sample01[i], tx);
-				float col1 = Helper::lerp(sample10[i], sample11[i], tx);
+				const float col0 = Helper::lerp(sample00[i], sample01[i], tx);
+				const float col1 = Helper::lerp(sample10[i], sample11[i], tx);
 				//Interpolation in Y direction
 				float col2 = Helper::lerp(col0, col1, ty);
 				Helper::clamp<float>(col2, 0.0f, 255.0f);
 				finaleSample[i] = static_cast<uint8_t>(col2);
+			}
+
+			//Get Current pixel
+			auto pixel = &out.imageData_[(j * out.pitch_) + (i + 0) * in.numOfChannels_];
+
+			pixel[0] = finaleSample[0];
+			pixel[1] = finaleSample[1];
+			pixel[2] = finaleSample[2];
+		}
+	}
+}
+
+void CubicSpline::resize(Tga& in, Tga& out)
+{
+	for (uint32_t j = 0; j < out.height_; j++)
+	{
+		float v = static_cast<float>(j) / static_cast<float>(out.height_ - 1);
+		for (uint32_t i = 0; i < out.width_; i++)
+		{
+			const float u = static_cast<float>(i) / static_cast<float>(out.width_ - 1);
+
+			const float x = (u * in.width_) - 0.5f;
+			const int xint = int(x);
+			const float tx = x - floor(x);
+
+			const float y = (v * in.height_) - 0.5f;
+			const int yint = int(y);
+			const float ty = y - floor(y);
+
+			//Get 4 X 4 sample to interpolate
+			const auto sample00 = Helper::getClampedSample(in, xint - 1, yint - 1);
+			const auto sample10 = Helper::getClampedSample(in, xint + 0, yint - 1);
+			const auto sample20 = Helper::getClampedSample(in, xint + 1, yint - 1);
+			const auto sample30 = Helper::getClampedSample(in, xint + 2, yint - 1);
+
+			const auto sample01 = Helper::getClampedSample(in, xint - 1, yint + 0);
+			const auto sample11 = Helper::getClampedSample(in, xint + 0, yint + 0);
+			const auto sample21 = Helper::getClampedSample(in, xint + 1, yint + 0);
+			const auto sample31 = Helper::getClampedSample(in, xint + 2, yint + 0);
+
+			const auto sample02 = Helper::getClampedSample(in, xint - 1, yint + 1);
+			const auto sample12 = Helper::getClampedSample(in, xint + 0, yint + 1);
+			const auto sample22 = Helper::getClampedSample(in, xint + 1, yint + 1);
+			const auto sample32 = Helper::getClampedSample(in, xint + 2, yint + 1);
+
+			const auto sample03 = Helper::getClampedSample(in, xint - 1, yint + 2);
+			const auto sample13 = Helper::getClampedSample(in, xint + 0, yint + 2);
+			const auto sample23 = Helper::getClampedSample(in, xint + 1, yint + 2);
+			const auto sample33 = Helper::getClampedSample(in, xint + 2, yint + 2);
+
+			uint8_t finaleSample[3];
+			for (uint32_t i = 0; i < 3; i++)
+			{
+				//Interpolation in X direction
+				const float col0 = Helper::cubicHermite(sample00[i], sample10[i], sample20[i], sample30[i], tx);
+				const float col1 = Helper::cubicHermite(sample01[i], sample11[i], sample21[i], sample31[i], tx);
+				const float col2 = Helper::cubicHermite(sample02[i], sample12[i], sample22[i], sample32[i], tx);
+				const float col3 = Helper::cubicHermite(sample03[i], sample13[i], sample23[i], sample33[i], tx);
+
+				//Interpolation in Y direction
+				float col4 = Helper::cubicHermite(col0, col1,col2, col3 ,ty);
+				Helper::clamp<float>(col4, 0.0f, 255.0f);
+				finaleSample[i] = static_cast<uint8_t>(col4);
 			}
 
 			//Get Current pixel
@@ -88,7 +151,7 @@ bool Tga::loadTGA(const char* FilePath)
 		if (width_ <= 0 || height_ <= 0 || (bitsPerPixel_ != 24) && (bitsPerPixel_ != 32))
 		{
 			in.close();
-			return false;
+			throw std::exception("Image width, height, bits per pixel is not correct!!!");
 		}
 
 		imageData_.resize(size_);
@@ -97,7 +160,9 @@ bool Tga::loadTGA(const char* FilePath)
 	}
 	else
 	{
-		return false;
+		//Compressed TGA not supported
+		in.close();
+		throw std::exception("Compressed TGA is not supported!!!");
 	}
 
 	in.close();
@@ -143,9 +208,19 @@ void Tga::resizeTGA(Tga& destTga) //New name is assumed with .tga extension
 	destTga.pitch_ = destTga.width_ * destTga.numOfChannels_;
 	destTga.imageData_.resize(destTga.size_);
 
-	std::unique_ptr<Resample> sampler = std::make_unique<Bilinear>();
+#ifdef NEAREST_
+	std::unique_ptr<Resample> sampler = std::make_unique<CubicSpline>();
 	sampler->resize(*this, destTga);
-	
+#endif
+#ifdef LINEAR_
+	std::unique_ptr<Resample> sampler = std::make_unique<CubicSpline>();
+	sampler->resize(*this, destTga);
+#endif
+#ifdef CUBIC_
+	std::unique_ptr<Resample> sampler = std::make_unique<CubicSpline>();
+	sampler->resize(*this, destTga);
+#endif
+
 	sampler.reset(nullptr);
 }
 
@@ -153,7 +228,17 @@ int main()
 {
 	Tga tga;
 	Tga out;
-	tga.loadTGA("MARBLES.tga");
-	tga.resizeTGA(out);
-	out.saveTGA("Resize.tga");
+	try
+	{
+		tga.loadTGA("MARBLES.tga");
+		tga.resizeTGA(out);
+		out.saveTGA("Resize.tga");
+	}
+	catch (std::exception e)
+	{
+		std::cerr << e.what();
+		return -1;
+	}
+
+	return 0;
 }
