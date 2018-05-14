@@ -84,21 +84,18 @@ namespace Helper
 		else if (v > max) { v = max; }
 	}
 
-	inline float lerp(const float a, const float b, const float t)
-	{
+	inline float lerp(const float a, const float b, const float t){
 		return a * (1.0f - t) + b * t;
 	}
 
-	inline uint8_t* getClampedSample(Tga& in, int x, int y)
-	{
+	inline uint8_t* getClampedSample(Tga& in, int x, int y){
 		clamp<int>(x, 0, in.width_ - 1);
 		clamp<int>(y, 0, in.height_ - 1);
 
 		return &in.imageData_[(y * in.pitch_) + (x + 0) * in.numOfChannels_];
 	}
 
-	float cubicHermite(float A, float B, float C, float D, float t)
-	{
+	float cubicHermite(float A, float B, float C, float D, float t){
 		float a = -A / 2.0f + (3.0f*B) / 2.0f - (3.0f*C) / 2.0f + D / 2.0f;
 		float b = A - (5.0f*B) / 2.0f + 2.0f*C - D / 2.0f;
 		float c = -A / 2.0f + C / 2.0f;

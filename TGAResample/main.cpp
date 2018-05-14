@@ -3,11 +3,9 @@
 
 void NearestNeighbour::resize(Tga& in, Tga& out)
 {
-	for (uint32_t j = 0; j < out.height_; j++)
-	{
+	for (uint32_t j = 0; j < out.height_; j++){
 		const float v = static_cast<float>(j) / static_cast<float>(out.height_ - 1);
-		for (uint32_t i = 0; i < out.width_; i++)
-		{
+		for (uint32_t i = 0; i < out.width_; i++){
 			const float u = static_cast<float>(i) / static_cast<float>(out.width_ - 1);
 
 			const int x = int(u * in.width_);
@@ -21,17 +19,16 @@ void NearestNeighbour::resize(Tga& in, Tga& out)
 			pixel[0] = sample[0];
 			pixel[1] = sample[1];
 			pixel[2] = sample[2];
+			if (in.numOfChannels_ == 4){ pixel[3] = sample[3];	}
 		}
 	}
 }
 
 void Bilinear::resize(Tga& in, Tga& out)
 {
-	for (uint32_t j = 0; j < out.height_; j++)
-	{
+	for (uint32_t j = 0; j < out.height_; j++){
 		const float v = static_cast<float>(j) / static_cast<float>(out.height_ - 1);
-		for (uint32_t i = 0; i < out.width_; i++)
-		{
+		for (uint32_t i = 0; i < out.width_; i++){
 			const float u = static_cast<float>(i) / static_cast<float>(out.width_ - 1);
 
 			const float x = (u * in.width_) - 0.5f;
@@ -47,9 +44,9 @@ void Bilinear::resize(Tga& in, Tga& out)
 			const auto sample01 = Helper::getClampedSample(in, xint, yint + 1);
 			const auto sample11 = Helper::getClampedSample(in, xint + 1, yint + 1);
 
-			uint8_t finaleSample[3];
-			for (uint32_t i = 0 ; i < 3; i++)
-			{
+			std::vector<uint8_t>finaleSample;
+			finaleSample.resize(in.numOfChannels_);
+			for (uint32_t i = 0 ; i < in.numOfChannels_; i++){
 				//Interpolation in X direction
 				const float col0 = Helper::lerp(sample00[i], sample01[i], tx);
 				const float col1 = Helper::lerp(sample10[i], sample11[i], tx);
@@ -65,17 +62,16 @@ void Bilinear::resize(Tga& in, Tga& out)
 			pixel[0] = finaleSample[0];
 			pixel[1] = finaleSample[1];
 			pixel[2] = finaleSample[2];
+			if (in.numOfChannels_ == 4) { pixel[3] = finaleSample[3]; }
 		}
 	}
 }
 
 void CubicSpline::resize(Tga& in, Tga& out)
 {
-	for (uint32_t j = 0; j < out.height_; j++)
-	{
+	for (uint32_t j = 0; j < out.height_; j++){
 		float v = static_cast<float>(j) / static_cast<float>(out.height_ - 1);
-		for (uint32_t i = 0; i < out.width_; i++)
-		{
+		for (uint32_t i = 0; i < out.width_; i++){
 			const float u = static_cast<float>(i) / static_cast<float>(out.width_ - 1);
 
 			const float x = (u * in.width_) - 0.5f;
@@ -107,9 +103,9 @@ void CubicSpline::resize(Tga& in, Tga& out)
 			const auto sample23 = Helper::getClampedSample(in, xint + 1, yint + 2);
 			const auto sample33 = Helper::getClampedSample(in, xint + 2, yint + 2);
 
-			uint8_t finaleSample[3];
-			for (uint32_t i = 0; i < 3; i++)
-			{
+			std::vector<uint8_t>finaleSample;
+			finaleSample.resize(in.numOfChannels_);
+			for (uint32_t i = 0; i < in.numOfChannels_; i++){
 				//Interpolation in X direction
 				const float col0 = Helper::cubicHermite(sample00[i], sample10[i], sample20[i], sample30[i], tx);
 				const float col1 = Helper::cubicHermite(sample01[i], sample11[i], sample21[i], sample31[i], tx);
@@ -128,28 +124,28 @@ void CubicSpline::resize(Tga& in, Tga& out)
 			pixel[0] = finaleSample[0];
 			pixel[1] = finaleSample[1];
 			pixel[2] = finaleSample[2];
+			if (in.numOfChannels_ == 4) { pixel[3] = finaleSample[3]; }
 		}
 	}
 }
 
 bool Tga::loadTGA(const char* FilePath)
 {
+	std::cout << "Reading \"" << FilePath << "\".... \n";
 	std::fstream in{ FilePath, std::ios::in | std::ios::binary };
 	if (!in.is_open())
 		return false;
 
 	in.read(reinterpret_cast<char*>(&header_), sizeof(header_));
 
-	if (std::memcmp(compressed_, &header_, sizeof(compressed_)))
-	{
+	if (std::memcmp(compressed_, &header_, sizeof(compressed_))){
 		bitsPerPixel_ = header_[16];
 		width_ = header_[13] * 256 + header_[12];
 		height_ = header_[15] * 256 + header_[14];
 		size_ = ((width_ * bitsPerPixel_ + 31) / 32) * 4 * height_ ;
 		numOfChannels_ = bitsPerPixel_ / 8;
 		pitch_ = width_ * numOfChannels_;
-		if (width_ <= 0 || height_ <= 0 || (bitsPerPixel_ != 24) && (bitsPerPixel_ != 32))
-		{
+		if (width_ <= 0 || height_ <= 0 || (bitsPerPixel_ != 24) && (bitsPerPixel_ != 32)){
 			in.close();
 			throw std::exception("Image width, height, bits per pixel is not correct!!!");
 		}
@@ -158,19 +154,21 @@ bool Tga::loadTGA(const char* FilePath)
 		bCompressed_ = false;
 		in.read(reinterpret_cast<char*>(imageData_.data()), size_);
 	}
-	else
-	{
+	else{
 		//Compressed TGA not supported
 		in.close();
 		throw std::exception("Compressed TGA is not supported!!!");
 	}
 
 	in.close();
+	std::cout << "Done ....\n";
 	return true;
 }
 
 bool Tga::saveTGA(const char* fileName)
 {
+	std::cout << "Saving \"" << fileName << "\".... \n";
+
 	std::fstream out{fileName, std::fstream::out | std::fstream::binary};
 	if (!out.is_open())
 		return false;
@@ -195,6 +193,8 @@ bool Tga::saveTGA(const char* fileName)
 	out.put(0);
 	out.write(reinterpret_cast<char*>(imageData_.data()), size_);
 	out.close();
+	std::cout << "Done ....\n";
+
 	return true;
 }
 
@@ -209,11 +209,11 @@ void Tga::resizeTGA(Tga& destTga) //New name is assumed with .tga extension
 	destTga.imageData_.resize(destTga.size_);
 
 #ifdef NEAREST_
-	std::unique_ptr<Resample> sampler = std::make_unique<CubicSpline>();
+	std::unique_ptr<Resample> sampler = std::make_unique<NearestNeighbour>();
 	sampler->resize(*this, destTga);
 #endif
 #ifdef LINEAR_
-	std::unique_ptr<Resample> sampler = std::make_unique<CubicSpline>();
+	std::unique_ptr<Resample> sampler = std::make_unique<Bilinear>();
 	sampler->resize(*this, destTga);
 #endif
 #ifdef CUBIC_
@@ -224,18 +224,32 @@ void Tga::resizeTGA(Tga& destTga) //New name is assumed with .tga extension
 	sampler.reset(nullptr);
 }
 
-int main()
+int main(int argc, char** argv)
 {
-	Tga tga;
+	Tga in;
 	Tga out;
-	try
-	{
-		tga.loadTGA("MARBLES.tga");
-		tga.resizeTGA(out);
-		out.saveTGA("Resize.tga");
+	
+	if (argc != 3) { 
+		std::cerr << "Please provide command in format : TGAResample.exe in.tga nameOfOutFile.tga !!!\n"; 
+		return -1;
 	}
-	catch (std::exception e)
-	{
+	try	{
+
+		if (!in.loadTGA(argv[1])) {
+			std::cerr << "Error in reading" << argv[1] << "!!!\n";
+			return -1;
+		}
+
+		std::cout << "Original Size:" << in.width_ << "X" << in.height_ << "\n";
+		in.resizeTGA(out);
+		std::cout << "Resizing to:" << out.width_ << "X" << out.height_ << "\n";
+
+		if (!out.saveTGA(argv[2])) {
+			std::cerr << "Error in saving" << argv[1] << "!!!\n";
+			return -1;
+		}
+	}
+	catch (std::exception e){
 		std::cerr << e.what();
 		return -1;
 	}
